@@ -3,65 +3,123 @@ import subprocess as sp
 import re
 from itertools import zip_longest
 
-def write_recipe(package, recipe_dir, config=None, force=False, bioc_version=None,
-				 pkg_version=None, versioned=False):
-	#sp.call(['conda', 'skeleton', 'cran', package], shell=True)
-	clean_skeleton_files(package, recipe_dir)
-	
+def write_recipe(package, recipe_dir,  no_windows, config=None, force=False, bioc_version=None,
+				 pkg_version=None, versioned=False,):
+	sp.call(['conda', 'skeleton', 'cran', package], shell=True)
+	clean_skeleton_files(package, no_windows)
 
-def clean_skeleton_files(package, recipe_dir):
+'''
+Cleans the yaml and build files to make them conda-forge compatible.
+'''
+def clean_skeleton_files(package, no_windows):
+	clean_yaml_file(package, no_windows)
+	clean_build_file(package, no_windows)
+	clean_bld_file(package, no_windows)
+
+'''
+Clean yaml file
+'''
+def clean_yaml_file(package, no_windows):
 	lines = []
-	path = 'r-' + package + '/meta.yaml'
+	path = 'r-'+ package + '/meta.yaml'
 	with open(path, 'r') as yaml:
 		lines = list(yaml.readlines())
 		lines = remove_comments(lines)
-		lines = remove_spaces(lines)
-	
-	print("LINES: " + str(lines))
+		lines = remove_empty_lines(lines)
+		if no_windows:
+			lines = skip_windows32(lines)
  
 	with open(path, 'w') as yaml:
 		yaml.write("".join(lines))	
 
+'''
+Clean build.sh file
+'''
+def clean_build_file(package, no_windows):
+	lines = []
+	path = 'r-' + package + '/build.sh'
+	with open(path, 'r') as build:
+		lines = list(build.readlines())
+		lines = remove_mv(lines)
+		lines = remove_grep(lines)
+		lines = remove_comments(lines)
+		lines = remove_empty_lines(lines)
+
+	with open(path, 'w') as build:
+		build.write("".join(lines))
+
+'''
+Clean bld.bat file
+'''
+def clean_bld_file(package, no_windows):
+	lines = []
+	path = 'r-' + package + '/bld.bat'
+	with open(path, 'r') as bld:
+		lines = list(bld.readlines())
+		lines = remove_at(lines)
+		lines = remove_empty_lines(lines)
+
+	with open(path, 'w') as bld:
+		bld.write("".join(lines))
+
+'''
+Removes the lines consisting of only comments
+'''
 def remove_comments(lines):
-	cleanedYaml = []
+	return [line for line in lines if (not re.search(r'^\s*#.*$', line))]
 
-	for line in lines:
-		#Remove comments
-		tempLine = re.sub(r'\s*#.*$', '', line)
-		#Append only non-empty lines as a result of a removed comment
-		tempLineHasChanged = False
-		if tempLine != line:
-			tempLineHasChanged = True
-
-		if (tempLineHasChanged and tempLine != '\n' or
-			not tempLineHasChanged):
-			cleanedYaml.append(tempLine)
-
-	print("new yaml: \n" + str(cleanedYaml))
-	return cleanedYaml
-
-def remove_spaces(lines):
-	cleanedYaml = []
-	for i, j in zip_longest(lines, lines[1:]):
-	 	if i.isspace() and j.isspace():
+'''
+Removes consecutive empty lines from a file
+'''
+def remove_empty_lines(lines):
+	cleanedLines = []
+	for line, nextLine in zip_longest(lines, lines[1:]):
+	 	if (line.isspace() and nextLine == None) or (line.isspace() and nextLine.isspace()):
 	 		pass
 	 	else:
-	 		cleanedYaml.append(i)
+	 		cleanedLines.append(line)
 
-	return cleanedYaml
+	return cleanedLines
+
+'''
+Removes the lines that start with @
+'''
+def remove_at(lines):
+	return [line for line in lines if not re.search(r'^@.*$',line)]
+
+'''
+Remove lines with mv commands
+'''
+def remove_mv(lines):
+	return [line for line in lines if not re.search(r'^mv\s.*$',line)]
+
+'''
+Remove lines with grep commands
+'''
+def remove_grep(lines):
+	return  [line for line in lines if not re.search(r'^grep\s.*$',line)]
+
+'''
+Inserts the skip: true # [win32] after number: 0, to skip windows builds
+'''
+def skip_windows32(lines):
+	return [re.sub(r'number: 0','number: 0\n  skip: true  # [win32]', line) for line in lines]
+
 
 def main():
 	""" Adding support for arguments here """
 	usage = "usage: %prog [options] arg"
 	parser = OptionParser(usage)
 	parser.add_option('--cran', nargs=2, dest="cran", help='runs the skeleton on a cran package with parameters: <package> <recipe_dir>')
+	parser.add_option('--no_win',default=False, dest="no_windows", action="store_true", help='runs the skeleton and removes windows specific information')
 
 	(options, args) = parser.parse_args()
 
 	if options.cran != None:
 		packageName = options.cran[0]
-		recipe_dir = options.cran[1]        
-		write_recipe(packageName, recipe_dir)
+		recipe_dir = options.cran[1]
+		no_windows = options.no_windows        
+		write_recipe(packageName, recipe_dir, no_windows=no_windows)
 
 
 if __name__ == '__main__':
