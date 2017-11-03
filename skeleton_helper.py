@@ -4,10 +4,10 @@ import re
 from itertools import zip_longest
 
 
-def write_recipe(package, recipe_dir, no_windows, config=None, force=False, bioc_version=None,
+def write_recipe(package, recipe_dir='.', no_windows=True, config=None, force=False, bioc_version=None,
                  pkg_version=None, versioned=False, ):
-    sp.call(['conda', 'skeleton', 'cran', package], shell=True)
-    clean_skeleton_files(package, no_windows)
+        sp.call(['conda skeleton cran '+ package + ' --output-dir ' + recipe_dir], shell=True)
+        clean_skeleton_files(recipe_dir + '/r-' +package, no_windows)
 
 
 
@@ -29,7 +29,7 @@ Clean yaml file
 
 def clean_yaml_file(package, no_windows):
     lines = []
-    path = 'r-' + package + '/meta.yaml'
+    path = package + '/meta.yaml'
     with open(path, 'r') as yaml:
         lines = list(yaml.readlines())
         lines = remove_comments(lines)
@@ -50,7 +50,7 @@ Clean build.sh file
 
 def clean_build_file(package, no_windows):
     lines = []
-    path = 'r-' + package + '/build.sh'
+    path = package + '/build.sh'
     with open(path, 'r') as build:
         lines = list(build.readlines())
         lines = remove_mv(lines)
@@ -69,7 +69,7 @@ Clean bld.bat file
 
 def clean_bld_file(package, no_windows):
     lines = []
-    path = 'r-' + package + '/bld.bat'
+    path = package + '/bld.bat'
     with open(path, 'r') as bld:
         lines = list(bld.readlines())
         lines = remove_at(lines)
@@ -95,12 +95,15 @@ Removes consecutive empty lines from a file
 
 def remove_empty_lines(lines):
     cleanedLines = []
+
     for line, nextLine in zip_longest(lines, lines[1:]):
         if (line.isspace() and nextLine == None) or (line.isspace() and nextLine.isspace()):
             pass
         else:
             cleanedLines.append(line)
 
+    if cleanedLines[0].isspace():
+        cleanedLines = cleanedLines[1:]
     return cleanedLines
 
 
