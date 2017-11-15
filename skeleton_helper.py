@@ -3,15 +3,14 @@ import subprocess as sp
 import re
 from itertools import zip_longest
 
+INVALID_NAME_MAP = {
+    'r-edger': 'bioconductor-edger',
+}
 
 def write_recipe(package, recipe_dir='.', no_windows=True, config=None, force=False, bioc_version=None,
                  pkg_version=None, versioned=False, ):
         sp.call(['conda skeleton cran '+ package + ' --output-dir ' + recipe_dir], shell=True)
         clean_skeleton_files(recipe_dir + '/r-' +package, no_windows)
-
-
-
-
 
 
 def clean_skeleton_files(package, no_windows):
@@ -38,7 +37,11 @@ def clean_yaml_file(package, no_windows):
         add_maintainers(lines)
 
     with open(path, 'w') as yaml:
-        yaml.write("".join(lines))
+        out = "".join(lines)
+        out = out.replace('{indent}', '\n    - ')
+        for wrong, correct in INVALID_NAME_MAP.items():
+            out = out.replace(wrong, correct)
+        yaml.write(out)
 
 
 
