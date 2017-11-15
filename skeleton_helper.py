@@ -14,9 +14,8 @@ def write_recipe(package, recipe_dir='.', no_windows=True, config=None, force=Fa
 
 
 def clean_skeleton_files(package, no_windows):
-    '''
-    Cleans the yaml and build files to make them conda-forge compatible.
-    '''
+    # Cleans the yaml and build files to make them conda-forge compatible.
+
     clean_yaml_file(package, no_windows)
     clean_build_file(package, no_windows)
     clean_bld_file(package, no_windows)
@@ -30,8 +29,8 @@ def clean_yaml_file(package, no_windows):
         lines = remove_comments(lines)
         lines = remove_empty_lines(lines)
         lines = remove_file_licences(lines)
-        lines = add_GPL2(lines)
-        lines = add_GPL3(lines)
+        lines = add_gpl2(lines)
+        lines = add_gpl3(lines)
         if no_windows:
             lines = skip_windows32(lines)
         add_maintainers(lines)
@@ -44,14 +43,9 @@ def clean_yaml_file(package, no_windows):
         yaml.write(out)
 
 
-
-
 def clean_build_file(package, no_windows):
-    '''
-    Clean build.sh file
-    '''
+    # Clean build.sh file
 
-    lines = []
     path = package + '/build.sh'
     with open(path, 'r') as build:
         lines = list(build.readlines())
@@ -64,14 +58,9 @@ def clean_build_file(package, no_windows):
         build.write("".join(lines))
 
 
-
-
-
 def clean_bld_file(package, no_windows):
-    '''
-    Clean bld.bat file
-    '''
-    lines = []
+    # Clean bld.bat file
+
     path = package + '/bld.bat'
     with open(path, 'r') as bld:
         lines = list(bld.readlines())
@@ -83,69 +72,59 @@ def clean_bld_file(package, no_windows):
 
 
 def remove_comments(lines):
-    '''
-    Removes the lines consisting of only comments
-    '''
+    # Removes the lines consisting of only comments
     return [line for line in lines if (not re.search(r'^\s*#.*$', line))]
 
 
-
 def remove_empty_lines(lines):
-    '''
-    Removes consecutive empty lines from a file
-    '''
-    cleanedLines = []
+    # Removes consecutive empty lines from a file
+
+    cleaned_lines = []
 
     for line, nextLine in zip_longest(lines, lines[1:]):
-        if (line.isspace() and nextLine == None) or (line.isspace() and nextLine.isspace()):
+        if (line.isspace() and nextLine is None) or (line.isspace() and nextLine.isspace()):
             pass
         else:
-            cleanedLines.append(line)
+            cleaned_lines.append(line)
 
-    if cleanedLines[0].isspace():
-        cleanedLines = cleanedLines[1:]
-    return cleanedLines
+    if cleaned_lines[0].isspace():
+        cleaned_lines = cleaned_lines[1:]
+    return cleaned_lines
 
 
 def remove_at(lines):
-    '''
-    Removes the lines that start with @
-    '''
+    # Removes the lines that start with @
+
     return [line for line in lines if not re.search(r'^@.*$', line)]
 
 
-
-
-
 def remove_mv(lines):
-    '''
-    Remove lines with mv commands
-    '''
+    # Remove lines with mv commands
+
     return [line for line in lines if not re.search(r'^mv\s.*$', line)]
 
 
-def add_GPL2(lines):
+def add_gpl2(lines):
     return [re.sub(r"  license_family: GPL2", "  license_family: GPL2\n  license_file: '{{ environ[\"PREFIX\"] }}\/lib\/R\/share\/licenses\/GPL-2'  # [unix]\n  license_file: '{{ environ[\"PREFIX\"] }}\\\R\\\share\\\licenses\\\GPL-2'  # [win]", line) for line in lines]
 
-def add_GPL3(lines):
+
+def add_gpl3(lines):
     return [re.sub(r"  license_family: GPL3", "  license_family: GPL3\n  license_file: '{{ environ[\"PREFIX\"] }}\/lib\/R\/share\/licenses\/GPL-3'  # [unix]\n  license_file: '{{ environ[\"PREFIX\"] }}\\\R\\\share\\\licenses\\\GPL-3'  # [win]", line) for line in lines]
 
+
 def remove_grep(lines):
-    '''
-    Remove lines with grep commands
-    '''
+    # Remove lines with grep commands
     return [line for line in lines if not re.search(r'^grep\s.*$', line)]
 
 
 def skip_windows32(lines):
-    '''
-    Inserts the skip: true # [win32] after number: 0, to skip windows builds
-    '''
+    # Inserts the skip: true # [win32] after number: 0, to skip windows builds
     return [re.sub(r'number: 0', 'number: 0\n  skip: true  # [win32]', line) for line in lines]
 
 
 def remove_file_licences(lines):
     return [re.sub(r' [+|] file LICEN[SC]E', '', line) for line in lines]
+
 
 def add_maintainers(lines):
     with open("maintainers.yaml", 'r') as yaml:
@@ -164,7 +143,7 @@ def main():
 
     (options, args) = parser.parse_args()
 
-    if options.cran != None:
+    if options.cran is not None:
         packageName = options.cran[0]
         recipe_dir = options.cran[1]
         no_windows = options.no_windows
