@@ -7,10 +7,11 @@ INVALID_NAME_MAP = {
     'r-edger': 'bioconductor-edger',
 }
 
+
 def write_recipe(package, recipe_dir='.', no_windows=True, config=None, force=False, bioc_version=None,
                  pkg_version=None, versioned=False, ):
         sp.call(['conda skeleton cran '+ package + ' --output-dir ' + recipe_dir], shell=True)
-        clean_skeleton_files(recipe_dir + '/r-' +package, no_windows)
+        clean_skeleton_files(recipe_dir + '/r-' + package, no_windows)
 
 
 def clean_skeleton_files(package, no_windows):
@@ -81,8 +82,8 @@ def remove_empty_lines(lines):
 
     cleaned_lines = []
 
-    for line, nextLine in zip_longest(lines, lines[1:]):
-        if (line.isspace() and nextLine is None) or (line.isspace() and nextLine.isspace()):
+    for line, next_line in zip_longest(lines, lines[1:]):
+        if (line.isspace() and next_line is None) or (line.isspace() and next_line.isspace()):
             pass
         else:
             cleaned_lines.append(line)
@@ -105,11 +106,17 @@ def remove_mv(lines):
 
 
 def add_gpl2(lines):
-    return [re.sub(r"  license_family: GPL2", "  license_family: GPL2\n  license_file: '{{ environ[\"PREFIX\"] }}\/lib\/R\/share\/licenses\/GPL-2'  # [unix]\n  license_file: '{{ environ[\"PREFIX\"] }}\\\R\\\share\\\licenses\\\GPL-2'  # [win]", line) for line in lines]
+    return [re.sub(r"  license_family: GPL2", "  license_family: GPL2\n  license_file: '{{ environ[\"PREFIX\"] }}"
+                                              "\/lib\/R\/share\/licenses\/GPL-2'  # [unix]\n  "
+                                              "license_file: '{{ environ[\"PREFIX\"] }}"
+                                              "\\\R\\\share\\\licenses\\\GPL-2'  # [win]", line) for line in lines]
 
 
 def add_gpl3(lines):
-    return [re.sub(r"  license_family: GPL3", "  license_family: GPL3\n  license_file: '{{ environ[\"PREFIX\"] }}\/lib\/R\/share\/licenses\/GPL-3'  # [unix]\n  license_file: '{{ environ[\"PREFIX\"] }}\\\R\\\share\\\licenses\\\GPL-3'  # [win]", line) for line in lines]
+    return [re.sub(r"  license_family: GPL3", "  license_family: GPL3\n  license_file: '{{ environ[\"PREFIX\"] }}"
+                                              "\/lib\/R\/share\/licenses\/GPL-3'  # [unix]\n  "
+                                              "license_file: '{{ environ[\"PREFIX\"] }}"
+                                              "\\\R\\\share\\\licenses\\\GPL-3'  # [win]", line) for line in lines]
 
 
 def remove_grep(lines):
